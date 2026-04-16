@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Video Wall Tile</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tile Launcher</title>
     <style>
+        * { box-sizing: border-box; }
         body, html { 
             margin: 0; padding: 0; 
+            width: 100%; height: 100%;
             overflow: hidden; 
             background-color: #000; 
-            width: 100%; height: 100%;
+            -webkit-user-select: none;
         }
         
         #container {
             width: 100vw; height: 100vh;
             position: relative;
-            overflow: hidden;
             background: #000;
         }
 
@@ -23,10 +24,10 @@
             position: absolute;
             border: none;
             display: none;
-            /* Force the video to fill the area regardless of aspect ratio */
-            object-fit: cover !important; 
+            /* Force the video to scale and fill the 3x3 slot */
             width: 300vw;
             height: 300vh;
+            object-fit: cover !important;
         }
 
         #overlay {
@@ -36,6 +37,7 @@
             background: #000;
             color: #fff;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 100;
@@ -43,18 +45,19 @@
             cursor: pointer;
         }
         .btn {
-            border: 2px solid #fff;
-            padding: 20px 40px;
-            border-radius: 50px;
+            border: 3px solid #fff;
+            padding: 30px 60px;
+            font-size: 24px;
+            font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
     <div id="overlay" onclick="launchTile()">
-        <div class="btn">Start Tile [<span id="coord-display">0,0</span>]</div>
+        <div class="btn">START TILE [<span id="coord-display">0,0</span>]</div>
+        <p style="margin-top:20px; color:#888;">Tap to go Fullscreen & Connect</p>
     </div>
 
     <div id="container">
@@ -76,29 +79,28 @@
         function launchTile() {
             const iframe = document.getElementById('vdo-stream');
             const overlay = document.getElementById('overlay');
-            const container = document.getElementById('container');
+            const docEl = document.documentElement;
 
-            // 1. Request Fullscreen (Hides Address Bar on Android)
-            if (container.requestFullscreen) {
-                container.requestFullscreen();
-            } else if (container.webkitRequestFullscreen) {
-                container.webkitRequestFullscreen(); // Safari
+            // 1. Force Fullscreen on the entire page
+            if (docEl.requestFullscreen) {
+                docEl.requestFullscreen();
+            } else if (docEl.webkitRequestFullscreen) {
+                docEl.webkitRequestFullscreen(); // Safari/iOS
             }
 
-            // 2. Build URL with &cover=1 to remove internal VDO.ninja black bars
-            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1`;
+            // 2. Updated VDO.ninja URL 
+            // &cover=1 removes internal VDO margins
+            // &scale=100 ensures no downscaling
+            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1&scale=100`;
             
             iframe.src = vdoUrl;
             iframe.style.display = "block";
             overlay.style.display = "none";
 
-            // 3. Mapping Logic
-            iframe.style.width = (cols * 100) + "vw";
-            iframe.style.height = (rows * 100) + "vh";
-            
+            // 3. Mapping with Translate3d for GPU acceleration
             const moveX = -(x * 100);
             const moveY = -(y * 100);
-            iframe.style.transform = `translate(${moveX}vw, ${moveY}vh)`;
+            iframe.style.transform = `translate3d(${moveX}vw, ${moveY}vh, 0)`;
         }
     </script>
 </body>
