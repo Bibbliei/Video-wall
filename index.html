@@ -16,17 +16,19 @@
             width: 100vw; height: 100vh;
             position: relative;
             overflow: hidden;
+            background: #000;
         }
 
         iframe {
             position: absolute;
             border: none;
-            display: none; /* Stays hidden until user interaction */
-            /* object-fit: cover ensures the 16:9 video fills your phone's screen shape */
-            object-fit: cover; 
+            display: none;
+            /* Force the video to fill the area regardless of aspect ratio */
+            object-fit: cover !important; 
+            width: 300vw;
+            height: 300vh;
         }
 
-        /* The Button Overlay - Required for Mobile Safari/Chrome */
         #overlay {
             position: fixed;
             top: 0; left: 0;
@@ -37,15 +39,14 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            text-align: center;
+            font-family: sans-serif;
             cursor: pointer;
         }
         .btn {
             border: 2px solid #fff;
             padding: 20px 40px;
             border-radius: 50px;
-            font-weight: bold;
+            text-transform: uppercase;
             letter-spacing: 2px;
         }
     </style>
@@ -53,44 +54,48 @@
 <body>
 
     <div id="overlay" onclick="launchTile()">
-        <div class="btn">START TILE [<span id="coord-display">0,0</span>]</div>
+        <div class="btn">Start Tile [<span id="coord-display">0,0</span>]</div>
     </div>
 
     <div id="container">
-        <iframe id="vdo-stream" allow="autoplay; fullscreen; microphone"></iframe>
+        <iframe id="vdo-stream" allow="autoplay; fullscreen"></iframe>
     </div>
 
     <script>
-        // Data from your update
         const viewID = "Q47DN9T";
         const password = "12345";
         
-        // Read mapping from URL
         const params = new URLSearchParams(window.location.search);
         const x = parseInt(params.get('x')) || 0;
         const y = parseInt(params.get('y')) || 0;
-        const cols = parseInt(params.get('cols')) || 3;
-        const rows = parseInt(params.get('rows')) || 3;
+        const cols = 3;
+        const rows = 3;
 
         document.getElementById('coord-display').innerText = `${x},${y}`;
 
         function launchTile() {
             const iframe = document.getElementById('vdo-stream');
             const overlay = document.getElementById('overlay');
-            
-            // Build VDO URL: Added &mute=1 and &buffer=0 for mobile synchronisation
-            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0`;
+            const container = document.getElementById('container');
+
+            // 1. Request Fullscreen (Hides Address Bar on Android)
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen(); // Safari
+            }
+
+            // 2. Build URL with &cover=1 to remove internal VDO.ninja black bars
+            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1`;
             
             iframe.src = vdoUrl;
             iframe.style.display = "block";
             overlay.style.display = "none";
 
-            // Mapping Logic
-            // Scale the iframe to 300% (for 3 cols/rows)
+            // 3. Mapping Logic
             iframe.style.width = (cols * 100) + "vw";
             iframe.style.height = (rows * 100) + "vh";
             
-            // Shift the view to the correct coordinate
             const moveX = -(x * 100);
             const moveY = -(y * 100);
             iframe.style.transform = `translate(${moveX}vw, ${moveY}vh)`;
