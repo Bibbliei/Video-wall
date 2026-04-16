@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Video Wall Tile</title>
+    <style>
+        body, html { 
+            margin: 0; padding: 0; 
+            overflow: hidden; 
+            background-color: #000; 
+            width: 100vw; height: 100vh;
+        }
+        #container {
+            width: 100vw; height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        iframe {
+            position: absolute;
+            border: none;
+            pointer-events: none;
+            /* This ensures the square 1280x1280 stream fills the rectangular phone */
+            object-fit: cover; 
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <iframe id="vdo-stream" src="" allow="autoplay; fullscreen"></iframe>
+    </div>
+
+    <script>
+        const viewID = "Q47DN9T";
+        const password = "12345";
+        const cols = 3; 
+        const rows = 3; 
+
+        const params = new URLSearchParams(window.location.search);
+        const x = parseInt(params.get('x')) || 0;
+        const y = parseInt(params.get('y')) || 0;
+
+        // VDO.ninja URL with your specific ID and Password
+        const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&cleanoutput=1&transparent=1&buffer=0`;
+        
+        const iframe = document.getElementById('vdo-stream');
+        iframe.src = vdoUrl;
+
+        // Apply 3x3 scaling
+        iframe.style.width = (cols * 100) + "vw";
+        iframe.style.height = (rows * 100) + "vh";
+        
+        // Shift the "window" to the correct coordinate
+        iframe.style.left = "-" + (x * 100) + "vw";
+        iframe.style.top = "-" + (y * 100) + "vh";
+    </script>
+</body>
+</html>
