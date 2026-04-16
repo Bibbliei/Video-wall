@@ -1,107 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Tile Launcher</title>
-    <style>
-        * { box-sizing: border-box; }
-        body, html { 
-            margin: 0; padding: 0; 
-            width: 100%; height: 100%;
-            overflow: hidden; 
-            background-color: #000; 
-            -webkit-user-select: none;
-        }
-        
-        #container {
-            width: 100vw; height: 100vh;
-            position: relative;
-            background: #000;
-        }
+<script>
+    const viewID = "Q47DN9T";
+    const password = "12345";
+    
+    const params = new URLSearchParams(window.location.search);
+    const x = parseInt(params.get('x')) || 0;
+    const y = parseInt(params.get('y')) || 0;
+    const cols = 3;
+    const rows = 3;
 
-        iframe {
-            position: absolute;
-            border: none;
-            display: none;
-            /* Force the video to scale and fill the 3x3 slot */
-            width: 300vw;
-            height: 300vh;
-            object-fit: cover !important;
-        }
+    document.getElementById('coord-display').innerText = `${x},${y}`;
 
-        #overlay {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #000;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            font-family: sans-serif;
-            cursor: pointer;
-        }
-        .btn {
-            border: 3px solid #fff;
-            padding: 30px 60px;
-            font-size: 24px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-    </style>
-</head>
-<body>
+    function launchTile() {
+        const iframe = document.getElementById('vdo-stream');
+        const overlay = document.getElementById('overlay');
+        const docEl = document.documentElement;
 
-    <div id="overlay" onclick="launchTile()">
-        <div class="btn">START TILE [<span id="coord-display">0,0</span>]</div>
-        <p style="margin-top:20px; color:#888;">Tap to go Fullscreen & Connect</p>
-    </div>
+        // 1. Force focus to the window first
+        window.focus();
 
-    <div id="container">
-        <iframe id="vdo-stream" allow="autoplay; fullscreen"></iframe>
-    </div>
-
-    <script>
-        const viewID = "Q47DN9T";
-        const password = "12345";
-        
-        const params = new URLSearchParams(window.location.search);
-        const x = parseInt(params.get('x')) || 0;
-        const y = parseInt(params.get('y')) || 0;
-        const cols = 3;
-        const rows = 3;
-
-        document.getElementById('coord-display').innerText = `${x},${y}`;
-
-        function launchTile() {
-            const iframe = document.getElementById('vdo-stream');
-            const overlay = document.getElementById('overlay');
-            const docEl = document.documentElement;
-
-            // 1. Force Fullscreen on the entire page
+        // 2. Wrap the fullscreen request in a tiny delay
+        // This helps 'QR-to-Browser' handoffs register the gesture correctly
+        setTimeout(() => {
             if (docEl.requestFullscreen) {
-                docEl.requestFullscreen();
+                docEl.requestFullscreen().catch(err => {
+                    console.log("Fullscreen failed, trying reload fix.");
+                });
             } else if (docEl.webkitRequestFullscreen) {
                 docEl.webkitRequestFullscreen(); // Safari/iOS
             }
+        }, 100);
 
-            // 2. Updated VDO.ninja URL 
-            // &cover=1 removes internal VDO margins
-            // &scale=100 ensures no downscaling
-            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1&scale=100`;
-            
-            iframe.src = vdoUrl;
-            iframe.style.display = "block";
-            overlay.style.display = "none";
+        // 3. Set the VDO.ninja source
+        const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1&scale=100`;
+        
+        iframe.src = vdoUrl;
+        iframe.style.display = "block";
+        overlay.style.display = "none";
 
-            // 3. Mapping with Translate3d for GPU acceleration
-            const moveX = -(x * 100);
-            const moveY = -(y * 100);
-            iframe.style.transform = `translate3d(${moveX}vw, ${moveY}vh, 0)`;
-        }
-    </script>
-</body>
-</html>
+        // 4. Mapping Logic
+        iframe.style.width = (cols * 100) + "vw";
+        iframe.style.height = (rows * 100) + "vh";
+        
+        const moveX = -(x * 100);
+        const moveY = -(y * 100);
+        iframe.style.transform = `translate3d(${moveX}vw, ${moveY}vh, 0)`;
+    }
+</script>
