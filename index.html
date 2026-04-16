@@ -9,50 +9,91 @@
             margin: 0; padding: 0; 
             overflow: hidden; 
             background-color: #000; 
-            width: 100vw; height: 100vh;
+            width: 100%; height: 100%;
         }
+        
+        /* The container is the size of the phone screen */
         #container {
-            width: 100vw; height: 100vh;
+            width: 100vw; 
+            height: 100vh;
             position: relative;
             overflow: hidden;
         }
+
+        /* The iframe is 3x the size of the screen (for a 3x3 grid) */
         iframe {
             position: absolute;
             border: none;
-            pointer-events: none;
-            /* This ensures the square 1280x1280 stream fills the rectangular phone */
-            object-fit: cover; 
+            display: none; /* Hidden until Start is clicked */
+        }
+
+        /* Essential Start Button for Mobile */
+        #overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            font-family: sans-serif;
+            text-align: center;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
+
+    <div id="overlay" onclick="startVideo()">
+        <div>
+            <h1>TILE [ <span id="coords-label">0,0</span> ]</h1>
+            <p>Tap to Join Video Wall</p>
+        </div>
+    </div>
+
     <div id="container">
-        <iframe id="vdo-stream" src="" allow="autoplay; fullscreen"></iframe>
+        <iframe id="vdo-stream" allow="autoplay; fullscreen; microphone"></iframe>
     </div>
 
     <script>
+        // 1. Setup Data
         const viewID = "Q47DN9T";
         const password = "12345";
         const cols = 3; 
         const rows = 3; 
 
+        // 2. Extract Coordinates
         const params = new URLSearchParams(window.location.search);
         const x = parseInt(params.get('x')) || 0;
         const y = parseInt(params.get('y')) || 0;
-
-        // VDO.ninja URL with your specific ID and Password
-        const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&cleanoutput=1&transparent=1&buffer=0`;
         
-        const iframe = document.getElementById('vdo-stream');
-        iframe.src = vdoUrl;
+        // Update the label so you know which phone is which
+        document.getElementById('coords-label').innerText = `${x},${y}`;
 
-        // Apply 3x3 scaling
-        iframe.style.width = (cols * 100) + "vw";
-        iframe.style.height = (rows * 100) + "vh";
-        
-        // Shift the "window" to the correct coordinate
-        iframe.style.left = "-" + (x * 100) + "vw";
-        iframe.style.top = "-" + (y * 100) + "vh";
+        function startVideo() {
+            const iframe = document.getElementById('vdo-stream');
+            const overlay = document.getElementById('overlay');
+            
+            // 3. Build the VDO.ninja URL with Mobile-Specific Flags
+            // &autoplay=1 &mute=1 are crucial for mobile
+            const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&rounded=0`;
+            
+            iframe.src = vdoUrl;
+            iframe.style.display = "block";
+            overlay.style.display = "none";
+
+            // 4. Robust Mapping Logic
+            // Scale the iframe to be 300% of the screen width/height
+            iframe.style.width = (cols * 100) + "vw";
+            iframe.style.height = (rows * 100) + "vh";
+            
+            // Use translate for better sub-pixel alignment on mobile
+            const moveX = -(x * 100);
+            const moveY = -(y * 100);
+            iframe.style.transform = `translate(${moveX}vw, ${moveY}vh)`;
+        }
     </script>
 </body>
 </html>
