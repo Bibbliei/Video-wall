@@ -1,48 +1,114 @@
-<script>
-    const viewID = "Q47DN9T";
-    const password = "12345";
-    
-    const params = new URLSearchParams(window.location.search);
-    const x = parseInt(params.get('x')) || 0;
-    const y = parseInt(params.get('y')) || 0;
-    const cols = 3;
-    const rows = 3;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Video Wall Tile</title>
+    <style>
+        /* Force everything to be black so we don't get white flashes */
+        html, body { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%;
+            background-color: #000 !important; 
+            color: #fff;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
 
-    document.getElementById('coord-display').innerText = `${x},${y}`;
+        #container {
+            width: 100vw; height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
 
-    function launchTile() {
-        const iframe = document.getElementById('vdo-stream');
-        const overlay = document.getElementById('overlay');
-        const docEl = document.documentElement;
+        iframe {
+            position: absolute;
+            top: 0; left: 0;
+            border: none;
+            display: none; /* Only show after click */
+            width: 300vw;
+            height: 300vh;
+            object-fit: cover;
+        }
 
-        // 1. Force focus to the window first
-        window.focus();
+        #overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            cursor: pointer;
+            background: #000; /* Solid black to hide background */
+        }
 
-        // 2. Wrap the fullscreen request in a tiny delay
-        // This helps 'QR-to-Browser' handoffs register the gesture correctly
-        setTimeout(() => {
-            if (docEl.requestFullscreen) {
-                docEl.requestFullscreen().catch(err => {
-                    console.log("Fullscreen failed, trying reload fix.");
-                });
-            } else if (docEl.webkitRequestFullscreen) {
-                docEl.webkitRequestFullscreen(); // Safari/iOS
-            }
-        }, 100);
+        .btn {
+            border: 4px solid #00ff00; /* Bright green so you can see it! */
+            padding: 30px 50px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
 
-        // 3. Set the VDO.ninja source
-        const vdoUrl = `https://vdo.ninja/?view=${viewID}&pw=${password}&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1&scale=100`;
+    <div id="overlay" onclick="launchTile()">
+        <div class="btn">
+            START TILE [<span id="coord-label">?</span>]<br>
+            <span style="font-size: 14px; font-weight: normal; color: #888;">Tap to sync video</span>
+        </div>
+    </div>
+
+    <div id="container">
+        <iframe id="vdo-stream" allow="autoplay; fullscreen"></iframe>
+    </div>
+
+    <script>
+        // 1. Setup Parameters
+        const viewID = "Q47DN9T";
+        const password = "12345";
         
-        iframe.src = vdoUrl;
-        iframe.style.display = "block";
-        overlay.style.display = "none";
+        // Use URLSearchParams to find coordinates
+        const urlParams = new URLSearchParams(window.location.search);
+        const x = parseInt(urlParams.get('x')) || 0;
+        const y = parseInt(urlParams.get('y')) || 0;
+        const cols = parseInt(urlParams.get('cols')) || 3;
+        const rows = parseInt(urlParams.get('rows')) || 3;
 
-        // 4. Mapping Logic
-        iframe.style.width = (cols * 100) + "vw";
-        iframe.style.height = (rows * 100) + "vh";
-        
-        const moveX = -(x * 100);
-        const moveY = -(y * 100);
-        iframe.style.transform = `translate3d(${moveX}vw, ${moveY}vh, 0)`;
-    }
-</script>
+        // Display current coordinates on the button
+        document.getElementById('coord-label').innerText = x + "," + y;
+
+        function launchTile() {
+            const iframe = document.getElementById('vdo-stream');
+            const overlay = document.getElementById('overlay');
+
+            // 2. Try Fullscreen (Android focus)
+            try {
+                const docEl = document.documentElement;
+                if (docEl.requestFullscreen) { docEl.requestFullscreen(); }
+                else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+            } catch (e) { console.log("Fullscreen blocked"); }
+
+            // 3. Load VDO.ninja
+            const vdoUrl = "https://vdo.ninja/?view=" + viewID + "&pw=" + password + "&autoplay=1&mute=1&cleanoutput=1&transparent=1&buffer=0&cover=1";
+            iframe.src = vdoUrl;
+            
+            // 4. Position and Scale the Tile
+            iframe.style.width = (cols * 100) + "vw";
+            iframe.style.height = (rows * 100) + "vh";
+            
+            const moveX = -(x * 100);
+            const moveY = -(y * 100);
+            iframe.style.transform = "translate3d(" + moveX + "vw, " + moveY + "vh, 0)";
+            
+            // 5. Show video, hide button
+            iframe.style.display = "block";
+            overlay.style.display = "none";
+        }
+    </script>
+</body>
+</html>
